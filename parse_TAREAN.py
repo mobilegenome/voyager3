@@ -40,8 +40,8 @@ def csv_parser(infile, outfile):
             fout.write(str(record.seq))
 
         seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out)
-#        seqinspect.repmask()
-        seqinspect.blastNR()
+        seqinspect.repmask
+#        seqinspect.blastNR()
     fin.close()
     fout.close()
 
