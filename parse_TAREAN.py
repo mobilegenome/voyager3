@@ -44,7 +44,8 @@ def csv_parser(infile, outfile):
 
         seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out)
         row["RM_hits"] = seqinspect.repmask
-        #row["BLASTn_hits(nr)"] = seqinspect.blastNR()
+        seqinspect.call_dotplot()
+        row["BLASTn_hits(nr)"] = seqinspect.blastNR()
 
         out_csv.writerow(row)
     fin.close()

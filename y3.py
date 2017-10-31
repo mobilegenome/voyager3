@@ -18,6 +18,7 @@ class SeqAnalyses:
 
         self.fasta_in = fasta_in
         self.seqid = seqid
+        self.RMhitfiles = []
 
         self.seq = SeqIO.read(fasta_in, "fasta")
         self.outdir = seqid
@@ -55,7 +56,7 @@ class SeqAnalyses:
                     rmlib_hits = (k for k in rmlib.keys() if re.match(rmhitname, k))
                     for hit in rmlib_hits:
                         SeqIO.write(rmlib[hit], "%s/RM.%s.fa" % (self.seqid, rmhitname), "fasta")
-
+                        self.RMhitfiles.append("%s/RM.%s.fa" % (self.seqid, rmhitname))
 
                     rmhits.append(rmhitsummary)
                 return ",".join(rmhits)
@@ -110,7 +111,69 @@ class SeqAnalyses:
 
 
     def dotplot(self):
-        # Create lists of x and y co-ordinates for scatter plot
+        window = 11
+        seqfile1 = self.fasta_in
+        seq1 = SeqIO.read(seqfile1, "fasta")
+        seq2 = SeqIO.read(self.RMhitfiles[0], "fasta")
+
+        seq_one = str(seq1.seq).upper()
+        seq_two = str(seq2.seq).upper()
+        data = [[(seq_one[i:i + window] <> seq_two[j:j + window]) for j in range(len(seq_one) - window)] for i in range(len(seq_two) - window)]
+
+        import pylab
+        pylab.gray()
+        pylab.imshow(data)
+        pylab.xlabel("%s (length %i bp)" % (seq1.id, len(seq1)))
+        pylab.ylabel("%s (length %i bp)" % (seq2.id, len(seq2)))
+        pylab.title("Dot plot using window size %i\n(allowing no mis-matches)" % window)
+        pylab.show()
+
+    def call_dotplot(self):
+
+        seqfile1 = self.fasta_in
+        seq1 = SeqIO.read(seqfile1, "fasta")
+        if len(set(self.RMhitfiles)) ==1:
+            seq2 = SeqIO.read(self.RMhitfiles[0], "fasta")
+            self.dotplot2(seq1, seq2)
+        elif 1 < len(set(self.RMhitfiles)) < 5:
+            for rmseqfile in set(self.RMhitfiles):
+                seq2 = SeqIO.read(rmseqfile, "fasta")
+                self.dotplot2(seq1, seq2)
+        else:
+            return 0
+
+    def dotplot2(self, seq1, seq2):
+
+        window = 7
+        dict_one = {}
+        dict_two = {}
+
+        for (seq, section_dict) in [(str(seq1.seq).upper(), dict_one),
+                                    (str(seq2.seq).upper(), dict_two)]:
+            for i in range(len(seq) - window):
+                section = seq[i:i + window]
+                try:
+                    section_dict[section].append(i)
+                except KeyError:
+                    section_dict[section] = [i]
+
+        dict_one_rev = {}
+        dict_two_rev = {}
+
+        for (seq, section_dict) in [(str(seq1.seq).upper(), dict_one_rev),
+                                    (str(seq2.seq.reverse_complement()).upper(), dict_two_rev)]:
+            for i in range(len(seq) - window):
+                section = seq[i:i + window]
+                try:
+                    section_dict[section].append(i)
+                except KeyError:
+                    section_dict[section] = [i]
+
+        matches = set(dict_one).intersection(dict_two)
+        matches_rev = set(dict_one_rev).intersection(dict_two_rev)
+        print("%i unique matches" % len(matches))
+
+            # Create lists of x and y co-ordinates for scatter plot
         x = []
         y = []
         for section in matches:
@@ -119,17 +182,25 @@ class SeqAnalyses:
                     x.append(i)
                     y.append(j)
 
+        xr = []
+        yr = []
+        for section in matches_rev:
+            for i in dict_one_rev[section]:
+                for j in dict_two_rev[section]:
+                    xr.append(i)
+                    yr.append(j)
+
         import pylab
         pylab.cla()  # clear any prior graph
         pylab.gray()
-        pylab.scatter(x, y)
-        pylab.xlim(0, len(rec_one) - window)
-        pylab.ylim(0, len(rec_two) - window)
-        pylab.xlabel("%s (length %i bp)" % (rec_one.id, len(rec_one)))
-        pylab.ylabel("%s (length %i bp)" % (rec_two.id, len(rec_two)))
+        pylab.scatter(x, y, c="green", s=0.5)
+        pylab.scatter(xr, yr, c="red", s=0.5)
+        pylab.xlim(0, len(seq1) - window)
+        pylab.ylim(0, len(seq2) - window)
+        pylab.xlabel("%s (length %i bp)" % (seq1.id, len(seq1)))
+        pylab.ylabel("%s (length %i bp)" % (seq2.id, len(seq2)))
         pylab.title("Dot plot using window size %i\n(allowing no mis-matches)" % window)
-        pylab.show()
-
+        pylab.savefig(os.path.join(self.outdir, "%s.%s.dotplot.png" %(seq1.id, seq2.id.split("#")[0])))
         return 1
 
     def secstruct(self):
