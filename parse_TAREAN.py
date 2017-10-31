@@ -16,6 +16,7 @@ def csv_parser(infile, outfile):
 
     in_csv.fieldnames.append("GC%")
     in_csv.fieldnames.append("RM_hits")
+    in_csv.fieldnames.append("BLASTn_hits(nr)")
 
     out_csv = csv.DictWriter(fout, fieldnames=in_csv.fieldnames)
     out_csv.writeheader()
@@ -42,8 +43,8 @@ def csv_parser(infile, outfile):
             fout.write(str(record.seq))
 
         seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out)
-        row["RM_hits"] = seqinspect.repmask
-#        seqinspect.blastNR()
+        #row["RM_hits"] = seqinspect.repmask
+        row["BLASTn_hits(nr)"] = seqinspect.blastNR()
 
         out_csv.writerow(row)
     fin.close()

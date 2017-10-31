@@ -2,6 +2,7 @@
 
 import os
 import re
+import signal
 
 
 class SeqAnalyses:
@@ -43,6 +44,7 @@ class SeqAnalyses:
                                                                  start=feature["start"],
                                                                  end=feature["end"],
                                                                  score=100 - feature["score"])
+                    # TODO extract and save repeat sequence
                     rmhits.append(hit)
                 return ",".join(rmhits)
 
@@ -52,22 +54,45 @@ class SeqAnalyses:
 
     def blastNR(self):
         import httplib
+        from Bio.Blast import NCBIWWW
+        from Bio.Blast import NCBIXML
         httplib.HTTPConnection._http_vsn = 10
         httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
-        from Bio.Blast import NCBIWWW
         print
         "Blasting"
         print
         self.seq.format("fasta")
         try:
-            result_handle = NCBIWWW.qblast("blastn", "nr", self.seq.format("fasta"))
-        except IncompleteReadError:
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(60)
+            result_handle = NCBIWWW.qblast("blastn", "nt", self.seq.format("fasta"))
+            blast_records = NCBIXML.parse(result_handle)
+            if blast_records:
+                blast_record = blast_records.next()
+                alignment =  blast_record.alignments[0]
+                for hsp in alignment.hsps:
+                    if hsp.expect < 0.004:
+                        print('****Alignment****')
+                        print('sequence:', alignment.title)
+                        print('length:', alignment.length)
+                        print('e value:', hsp.expect)
+                        print(hsp.query[0:75] + '...')
+                        print(hsp.match[0:75] + '...')
+                        print(hsp.sbjct[0:75] + '...')
+                        firstblasthit = "{acc},{alnlength}".format(acc=alignment.title,
+                                                                 alnlength=alignment.length)
+                with open("%s/%s.blast.xml" % (self.seqid, os.path.basename(self.fasta_in)),
+                          "w") as blastout_file:
+                    blastout_file.write(result_handle.read())
+                    print("BLASTn results written to %s/%s.blast.xml" %(self.seqid, os.path.basename(self.fasta_in)))
+                    result_handle.close()
+                return firstblasthit
+            else:
+                return "NA"
+        except:
             print("BLAST failed. Continuing")
+            return "NA"
 
-        with open("my_blast.xml", "w") as out_handle:
-            out_handle.write(result_handle.read())
-            result_handle.close()
-        return 1
 
     def dotplot(self):
         # Create lists of x and y co-ordinates for scatter plot
@@ -96,6 +121,9 @@ class SeqAnalyses:
 
         return 1
 
+def handler(signum, frame):
+    print "Forever is over!"
+    raise Exception("end of time")
 
 def parseGFF(infile):
     gff = []
