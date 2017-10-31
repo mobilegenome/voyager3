@@ -15,6 +15,8 @@ def csv_parser(infile, outfile):
     in_csv = csv.DictReader(fin)
 
     in_csv.fieldnames.append("GC%")
+    in_csv.fieldnames.append("RM_hits")
+
     out_csv = csv.DictWriter(fout, fieldnames=in_csv.fieldnames)
     out_csv.writeheader()
 
@@ -33,15 +35,17 @@ def csv_parser(infile, outfile):
                                length=float(row["Consensus length"]), prop=float(row["Genome Proportion[%]"]),
                                gc=row["GC%"]))
 
-        out_csv.writerow(row)
+
         fasta_out = "%s.%s.fa" % (taxon, row["Cluster"])
         with open(fasta_out, "w") as fout:
             fout.write(">%s %s\n" % (record.id, record.description))
             fout.write(str(record.seq))
 
         seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out)
-        seqinspect.repmask
+        row["RM_hits"] = seqinspect.repmask
 #        seqinspect.blastNR()
+
+        out_csv.writerow(row)
     fin.close()
     fout.close()
 
