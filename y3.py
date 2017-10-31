@@ -3,6 +3,11 @@
 import os
 import re
 import signal
+from Bio import SeqIO
+
+print "load RepeatMasker library"
+rmlib = SeqIO.index("/home/fritjof/programs/RepeatMasker/Libraries/RepeatMasker.lib", "fasta")
+print "done."
 
 
 class SeqAnalyses:
@@ -40,12 +45,19 @@ class SeqAnalyses:
                 for feature in gff:
                     elem_re = re.compile("\:(.*)\"")
                     hit = elem_re.search(feature["other"])
-                    hit = "{elem}:{start}-{end}({score})".format(elem=hit.group(1),
+                    rmhitname = hit.group(1)
+                    rmhitsummary = "{elem}:{start}-{end}({score})".format(elem=rmhitname,
                                                                  start=feature["start"],
                                                                  end=feature["end"],
                                                                  score=100 - feature["score"])
-                    # TODO extract and save repeat sequence
-                    rmhits.append(hit)
+                    rmhits.append(rmhitsummary)
+
+                    rmlib_hits = (k for k in rmlib.keys() if re.match(rmhitname, k))
+                    for hit in rmlib_hits:
+                        SeqIO.write(rmlib[hit], "%s/RM.%s.fa" % (self.seqid, rmhitname), "fasta")
+
+
+                    rmhits.append(rmhitsummary)
                 return ",".join(rmhits)
 
         except "CalledProcessError":
@@ -58,13 +70,10 @@ class SeqAnalyses:
         from Bio.Blast import NCBIXML
         httplib.HTTPConnection._http_vsn = 10
         httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
-        print
-        "Blasting"
-        print
-        self.seq.format("fasta")
+        print("Blasting")
         try:
-            signal.signal(signal.SIGALRM, handler)
-            signal.alarm(60)
+  #          signal.signal(signal.SIGALRM, handler)
+   #         signal.alarm(60)
             result_handle = NCBIWWW.qblast("blastn", "nt", self.seq.format("fasta"))
             blast_records = NCBIXML.parse(result_handle)
             if blast_records:
@@ -90,8 +99,14 @@ class SeqAnalyses:
             else:
                 return "NA"
         except:
-            print("BLAST failed. Continuing")
+            print("BLAST error. Continuing")
             return "NA"
+        # except "IncompleteReadError":
+        #     print("BLAST timeout. Continuing")
+        #     return "NA"
+        # except TimeoutError:
+        #     print("BLAST timeout. Continuing")
+        #     return "NA"
 
 
     def dotplot(self):
@@ -122,8 +137,8 @@ class SeqAnalyses:
         return 1
 
 def handler(signum, frame):
-    print "Forever is over!"
-    raise Exception("end of time")
+    print "Timeout."
+    raise Exception("TimeoutError")
 
 def parseGFF(infile):
     gff = []

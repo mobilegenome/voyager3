@@ -43,8 +43,8 @@ def csv_parser(infile, outfile):
             fout.write(str(record.seq))
 
         seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out)
-        #row["RM_hits"] = seqinspect.repmask
-        row["BLASTn_hits(nr)"] = seqinspect.blastNR()
+        row["RM_hits"] = seqinspect.repmask
+        #row["BLASTn_hits(nr)"] = seqinspect.blastNR()
 
         out_csv.writerow(row)
     fin.close()
