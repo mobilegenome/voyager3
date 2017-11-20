@@ -40,7 +40,7 @@ with open(infile) as fin:
         gs = len(gapmatch.group(0)) if gapmatch else 0
         gs_max = gs if not gs_max > gs else gs_max
 
-        record.seq = Seq.Seq(str(record.seq).strip("-") * 2)  # double sequence to circularize
+        record.seq = Seq.Seq(str(record.seq).rstrip("-") + str(record.seq).strip("-"))  # double sequence to circularize
         record.seq = record.seq[(gs_max - gs):(seqlen + gs_max - gs)]
 
 with open(outfile, "w") as fout:

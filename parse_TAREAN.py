@@ -48,6 +48,8 @@ def csv_parser(infile, outfile):
         row["BLASTn_hits(nr)"] = seqinspect.blastNR()
 
         out_csv.writerow(row)
+
+        # TODO create HTML/PDF output
     fin.close()
     fout.close()
 
