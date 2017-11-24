@@ -29,12 +29,20 @@ def csv_parser(infile, outfile):
             continue
         seq = Seq(row["Consensus"])
         row["GC%"] = "{gc:.4}".format(gc=GC(seq))
-        record = SeqRecord(seq,
-                           id=row["Cluster"],
-                           name=row["Cluster"],
-                           description="length: {length} bp, genome_proportion: {prop:.5}%, GC: {gc:.4}% ".format(
-                               length=float(row["Consensus length"]), prop=float(row["Genome Proportion[%]"]),
-                               gc=row["GC%"]))
+        try:
+            record = SeqRecord(seq,
+                               id=row["Cluster"],
+                               name=row["Cluster"],
+                               description="length: {length} bp, genome_proportion: {prop:.5}%, GC: {gc:.4}% ".format(
+                                   length=float(row["Consensus length"]), prop=float(row["Genome Proportion[%]"]),
+                                   gc=row["GC%"]))
+        except KeyError:
+            record = SeqRecord(seq,
+                               id=row["Cluster"],
+                               name=row["Cluster"],
+                               description="length: {length} bp, genome_proportion: {prop:.5}%, GC: {gc:.4}% ".format(
+                                   length=float(row["Consensuslength"]), prop=float(row["GenomeProportion[%]"]),
+                                   gc=row["GC%"]))
 
 
         fasta_out = "%s.%s.fa" % (taxon, row["Cluster"])
