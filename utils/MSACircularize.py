@@ -34,7 +34,6 @@ with open(infile) as fin:
     #  iteration to save gap-states in alignment
     gs_max = 0
     for record in aln:
-        seqlen = len(str(record.seq).strip("-"))  # original sequence length
 
         gapmatch = re.match("[-]+", str(record.seq))
         gs = len(gapmatch.group(0)) if gapmatch else 0
@@ -43,6 +42,7 @@ with open(infile) as fin:
     # second teration to alter sequences in alignment
 
     for record in aln:
+        seqlen = len(str(record.seq).strip("-"))  # original sequence length
         record.seq = Seq.Seq(str(record.seq).rstrip("-") + str(record.seq).strip("-"))  # double sequence to circularize
         record.seq = record.seq[gs_max:(seqlen + gs_max)]
 
