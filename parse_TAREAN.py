@@ -47,8 +47,8 @@ def csv_parser(infile, outfile):
 
         fasta_out = "%s.%s.fa" % (taxon, row["Cluster"])
         with open(fasta_out, "w") as fout:
-            fout.write(">%s %s\n" % (record.id, record.description))
-            fout.write(str(record.seq))
+            fout.write(">%s.%s %s\n" % (taxon, record.id, record.description))
+            fout.write(str(record.seq)+"\n")
 
         seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out)
         row["RM_hits"] = seqinspect.repmask

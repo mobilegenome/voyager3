@@ -31,17 +31,21 @@ with open(infile) as fin:
     print "process... "
     aln = AlignIO.read(fin, msa_format)  # load MSA
 
-    #  iteration to alter sequences in alignment
+    #  iteration to save gap-states in alignment
     gs_max = 0
     for record in aln:
         seqlen = len(str(record.seq).strip("-"))  # original sequence length
 
         gapmatch = re.match("[-]+", str(record.seq))
         gs = len(gapmatch.group(0)) if gapmatch else 0
-        gs_max = gs if not gs_max > gs else gs_max
+        gs_max = gs if gs_max < gs else gs_max
 
+    # second teration to alter sequences in alignment
+
+    for record in aln:
         record.seq = Seq.Seq(str(record.seq).rstrip("-") + str(record.seq).strip("-"))  # double sequence to circularize
-        record.seq = record.seq[(gs_max - gs):(seqlen + gs_max - gs)]
+        record.seq = record.seq[gs_max:(seqlen + gs_max)]
+
 
 with open(outfile, "w") as fout:
     print "[ %s ] Save alignment to %s ..." % (scriptname, outfile)
