@@ -23,6 +23,8 @@ outfmt6 = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstar
 
 blast_table_filtered = []
 connections = []
+clustered = []
+singletons = set([])
 with open(blast_in) as fin, open(blast_in+".filtered", "w") as fout:
     blast_table = csv.DictReader(fin,fieldnames=outfmt6,dialect='excel-tab')
     blast_table_filtered = csv.DictWriter(fout, fieldnames=outfmt6,dialect='excel-tab')
@@ -35,9 +37,21 @@ with open(blast_in) as fin, open(blast_in+".filtered", "w") as fout:
             if int(row["length"]) >= 0.8*query_length and float(row["pident"]) >= 80:
                 blast_table_filtered.writerow(row)
                 connections.append((row["qseqid"],row["sseqid"]))
+                clustered.append(row["qseqid"])
+                clustered.append(row["sseqid"])
 
+# second itertion
+with open(blast_in) as fin, open(blast_in + ".filtered", "w") as fout:
+    blast_table = csv.DictReader(fin, fieldnames=outfmt6, dialect='excel-tab')
+    for row in blast_table:
+        if row["qseqid"] == row["sseqid"]:
+            if row["qseqid"] not in clustered:
+                singletons.add(row["qseqid"])
 
+with open(blast_in+".singletons", "w") as singletons_fin:
+    singletons_fin.write("\n".join(singletons))
 
+# create Graph of pairs
 def to_graph(CL, edge):
     G = networkx.Graph()
     for part in CL:
@@ -47,35 +61,9 @@ def to_graph(CL, edge):
 
 
 G = to_graph(connections, connections)
-for se in connected_components(G):
-    print list(se)
+connection_list = [list(se) for se in connected_components(G)]
+connection_list.sort(key=len, reverse=True)
+for se_list in connection_list:
+    print ".fa ".join(se_list) + ".fa "
 
 
-
-# conn_dict = defaultdict(list)
-# for tup in connections:
-#     q = tup[0]
-#     s = tup[1]
-#
-#     if q in conn_dict.keys():
-#         conn_dict[q].append(s)
-#     elif s in conn_dict.keys():
-#         conn_dict[s].append(q)
-#     else:
-#         if q in conn_dict.values():
-#             q_hits = [k for k,v in conn_dict.iteritems() if q in v]
-#             assert (len(q_hits) == 1)
-#             conn_dict[q_hits[0]].append(s)
-#         elif s in conn_dict.values():
-#             s_hits = [k for k, v in conn_dict.iteritems() if s in v]
-#             assert (len(q_hits) == 1)
-#             conn_dict[s_hits[0]].append(q)
-#         else:
-#             conn_dict[q].append(s)
-# q
-#
-#
-#
-# for k,v in conn_dict.iteritems():
-#     print "%s\t%s" %(k, ",".join(v))
-# q
