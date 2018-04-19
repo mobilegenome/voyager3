@@ -50,7 +50,7 @@ def csv_parser(infile, outfile):
             fout.write(">%s.%s %s\n" % (taxon, record.id, record.description))
             fout.write(str(record.seq)+"\n")
 
-        seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out)
+        seqinspect = SeqAnalyses("%s.%s" % (taxon, row["Cluster"]), fasta_out, species)
         row["RM_hits"] = seqinspect.repmask
         seqinspect.call_dotplot()
         row["BLASTn_hits(nr)"] = seqinspect.blastNR()
@@ -63,5 +63,6 @@ def csv_parser(infile, outfile):
 
 if __name__ == "__main__":
     infile = argv[1]
-    outfile = argv[2]
+    species = argv[2]
+    outfile = argv[3]
     csv_parser(infile, outfile)

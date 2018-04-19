@@ -11,7 +11,7 @@ print "done."
 
 
 class SeqAnalyses:
-    def __init__(self, seqid, fasta_in):
+    def __init__(self, seqid, fasta_in, species):
         from Bio import SeqIO
 
         from os import makedirs
@@ -19,7 +19,7 @@ class SeqAnalyses:
         self.fasta_in = fasta_in
         self.seqid = seqid
         self.RMhitfiles = []
-
+        self.RM_species = species
         self.seq = SeqIO.read(fasta_in, "fasta")
         self.outdir = seqid
         try:
@@ -30,8 +30,9 @@ class SeqAnalyses:
     @property
     def repmask(self):
         import subprocess
-        cmdl = "RepeatMasker -species mammal -dir {outdir} -gff -html {seqfa}".format(outdir=self.seqid,
-                                                                                      seqfa=self.fasta_in)
+        cmdl = "RepeatMasker -species {species} -dir {outdir} -gff -html {seqfa}".format(species=self.RM_species,
+                                                                                            outdir=self.seqid,
+                                                                                            seqfa=self.fasta_in)
         print("Searching for repeats in %s" % self.seqid),
         print(" ".join(cmdl.split(" ")))
 
